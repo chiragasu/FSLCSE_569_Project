@@ -48,7 +48,7 @@ def plotWithCosts(num_iterations, costList, is_batch_comparision=True, net_dims=
     # y axis would be costs list for training and validation set
 
     iterations = [i for i in range(0, num_iterations, 10)];
-    for key in costList.iterkeys():
+    for key in costList:
         label = "";
         if is_batch_comparision:
             label = "Batch size of " + str(key);
@@ -58,3 +58,4 @@ def plotWithCosts(num_iterations, costList, is_batch_comparision=True, net_dims=
     plt.legend();
     plt.title("Training errors for %s dimensions multi layer neurons" % str(net_dims[:len(net_dims) - 1]));
     plt.show();
+    print("Hogata")

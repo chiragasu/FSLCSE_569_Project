@@ -11,6 +11,7 @@ from src import Activation_functions_and_derivatives as AFD;
 from src import UtilityFunctions as UF;
 from src import load_mnist_Prof as LMP;
 import sys, ast;
+import time;
 
 no_of_digits = 10;
 
@@ -253,6 +254,8 @@ def update_parameters(parameters, gradients, epoch, learning_rate, decay_rate=0.
 
 def multi_layer_network(X, Y, validation_data, validation_label, net_dims, num_iterations=500, learning_rate=0.2,
                         decay_rate=0.01, batch_size=50, descent_optimization_type=0):
+    print("num iter : " + str(num_iterations) + " batch size: " + str(batch_size));
+
     '''
     Creates the multilayer network and trains the network
 
@@ -271,12 +274,14 @@ def multi_layer_network(X, Y, validation_data, validation_label, net_dims, num_i
     A0 = X;
     costs = [];
     for ii in range(num_iterations):
+        print("epoch " + str(ii));
         # Forward Prop
         # This consists for starting from Ao i.e X
         # and evalute till AL
         # keep hold of cache to be used later in backpropagation step
         cost = classify(X, parameters, Y)[1];
         for i in range(0, len(A0.T), batch_size):
+            # print("batch " + str(i));
             if i + batch_size >= len(X.T):
                 batch_data = X.T[i:].T
                 batch_label = Y.T[i:].T
@@ -335,8 +340,8 @@ def main():
                   noTrPerClass=500, noTsPerClass=100);
 
     # initialize learning rate and num_iterations
-    learning_rate = 0.1
-    num_iterations = 600
+    learning_rate = 0.1;
+    num_iterations = 100;
 
     train_data_act, train_label_act = UF.unison_shuffled_copies(train_data_act.T, train_label_act.T);
 
@@ -349,32 +354,41 @@ def main():
         is_batch_comparision = True;
         gdo_opt = int(input("Enter the GDO type : "));
         learning_rate = float(input("Learning rate, you want to check for: "));
-        batch_Sizes = [1, 50, 100, 500, 5000];
+        # batch_Sizes = [1, 50, 100, 500, 5000];
+        batch_Sizes = [500, 100, 5000];
 
         for x in batch_Sizes:
+            tic = time.time();
             costs, _, parameters = multi_layer_network(train_data_act, train_label_act, validation_data,
                                                        validation_label,
                                                        net_dims, \
                                                        num_iterations=num_iterations, learning_rate=learning_rate,
                                                        batch_size=x);
+            toc = time.time();
+            print("For batch size : " + str(x) + "time taken was :" + str(toc - tic));
             costsList[x] = costs;
             parametersList[x] = parameters;
-            UF.getTrainAndValidationAccuracy();
+            UF.getTrainAndValidationAccuracy(train_data_act, train_label_act, validation_data, validation_label,
+                                             parameters);
 
     if inp == 2:
         is_batch_comparision = False;
         batch_Size = int(input("Enter the Batch Size you want to test for : "));
         learning_rate = float(input("Learning rate, you want to check for: "));
 
-        for key in UF.desent_optimzation_map.iterkeys():
+        for key in UF.desent_optimzation_map:
+            tic = time.time();
             costs, _, parameters = multi_layer_network(train_data_act, train_label_act, validation_data,
                                                        validation_label,
                                                        net_dims, \
                                                        num_iterations=num_iterations, learning_rate=learning_rate,
                                                        descent_optimization_type=key, batch_size=batch_Size);
+            print("For GDO : " + UF.desent_optimzation_map[key] + "time taken was :" + str(toc - tic));
+            toc = time.time();
             costsList[x] = costs;
             parametersList[x] = parameters;
-            UF.getTrainAndValidationAccuracy();
+            UF.getTrainAndValidationAccuracy(train_data_act, train_label_act, validation_data, validation_label,
+                                             parameters);
 
     UF.plotWithCosts(num_iterations, costsList, True, net_dims);
 

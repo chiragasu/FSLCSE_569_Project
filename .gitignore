@@ -1,3 +1,7 @@
 .idea/
 src/__pycache__/
 output/
+src/Adam/__pycache__/
+src/Nestrov/__pycache__/
+src/Poly/__pycache__/
+src/RMSProp/__pycache__/

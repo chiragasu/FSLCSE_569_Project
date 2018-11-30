@@ -12,6 +12,10 @@ from src import UtilityFunctions as UF;
 from src import load_mnist_Prof as LMP;
 import sys, ast;
 import time;
+from src.Poly import PolyUpdate as PU;
+from src.Adam import AdamUpdate as AU;
+from src.Nestrov import NestrovUpdate as NU;
+from src.RMSProp import RMSpropUpdate as RPU;
 
 no_of_digits = 10;
 
@@ -40,10 +44,15 @@ def initialize_multilayer_weights(net_dims):
     np.random.seed(0);
     numLayers = len(net_dims);
     parameters = {};
+    momentumParams = {};
     for l in range(numLayers - 1):
         parameters["W" + str(l + 1)] = np.random.randn(net_dims[l + 1], net_dims[l]) * np.sqrt(1 / net_dims[l + 1]);
         parameters["b" + str(l + 1)] = np.random.randn(net_dims[l + 1], 1) * np.sqrt(1 / net_dims[l + 1]);
-    return parameters;
+        momentumParams["vtw" + str(l + 1)] = np.zeros((net_dims[l + 1], net_dims[l]), dtype=float);
+        momentumParams["vtb" + str(l + 1)] = np.zeros((net_dims[l + 1], 1), dtype=float);
+        momentumParams["mtw" + str(l + 1)] = np.zeros((net_dims[l + 1], net_dims[l]), dtype=float);
+        momentumParams["mtb" + str(l + 1)] = np.zeros((net_dims[l + 1], 1), dtype=float);
+    return parameters, momentumParams;
 
 
 def linear_forward(A, W, b):
@@ -227,7 +236,7 @@ def classify(X, parameters, lables, onlyPred=False):
     return Ypred, loss;
 
 
-def update_parameters(parameters, gradients, epoch, learning_rate, decay_rate=0.01, descent_optimization_type=0):
+def update_parameters(parameters, gradients, epoch, learning_rate, decay_rate=0.01, descent_optimization_type=0, momentumParams={}):
     '''
     Updates the network parameters with gradient descent
 
@@ -246,10 +255,35 @@ def update_parameters(parameters, gradients, epoch, learning_rate, decay_rate=0.
     L = len(parameters) // 2
     # Once the required slopes of W and b are found the update
     # we update the value W and b and continue till the required iterations are completed
+
+
     for l in range(1, L + 1):
-        parameters["W" + str(l)] = parameters["W" + str(l)] - alpha * gradients["dW" + str(l)];
-        parameters["b" + str(l)] = parameters["b" + str(l)] - alpha * gradients["db" + str(l)];
-    return parameters, alpha
+        dw_update = gradients["dW" + str(l)];
+        db_update = gradients["db" + str(l)];
+        if descent_optimization_type == 1:
+            dw_update, db_update = PU.polyUpdateParams(momentumParams["mtw" + str(l)], momentumParams["mtb" + str(l)], dw_update, db_update);
+            momentumParams["mtw" + str(l)] = dw_update;
+            momentumParams["mtw" + str(l)] = db_update;
+        elif descent_optimization_type == 2:
+            dw_update, db_update = NU.NestrovUpdateParams(momentumParams["mtw" + str(l)], momentumParams["mtb" + str(l)],
+                                                       dw_update, db_update);
+            momentumParams["mtw" + str(l)] = dw_update;
+            momentumParams["mtw" + str(l)] = db_update;
+        elif descent_optimization_type == 3:
+            dw_update, db_update = AU.adamUpdateParams(momentumParams["mtw" + str(l)],
+                                                          momentumParams["mtb" + str(l)],
+                                                          dw_update, db_update);
+            momentumParams["mtw" + str(l)] = dw_update;
+            momentumParams["mtw" + str(l)] = db_update;
+        elif descent_optimization_type == 4:
+            dw_update, db_update = RPU.rmsPropUpdateParams(momentumParams["mtw" + str(l)],
+                                                          momentumParams["mtb" + str(l)],
+                                                          dw_update, db_update);
+            momentumParams["mtw" + str(l)] = dw_update;
+            momentumParams["mtw" + str(l)] = db_update;
+        parameters["W" + str(l)] = parameters["W" + str(l)] - alpha * dw_update;
+        parameters["b" + str(l)] = parameters["b" + str(l)] - alpha * db_update;
+    return parameters, alpha;
 
 
 def multi_layer_network(X, Y, validation_data, validation_label, net_dims, num_iterations=500, learning_rate=0.2,
@@ -270,7 +304,7 @@ def multi_layer_network(X, Y, validation_data, validation_label, net_dims, num_i
         costs - list of costs over training
         parameters - dictionary of trained network parameters
     '''
-    parameters = initialize_multilayer_weights(net_dims);
+    parameters, momentumparams = initialize_multilayer_weights(net_dims);
     A0 = X;
     costs = [];
     for ii in range(num_iterations):

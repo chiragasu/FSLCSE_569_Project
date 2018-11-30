@@ -6,12 +6,11 @@ Hemanth Venkateswara
 hkdv1@asu.edu
 Oct 2018
 '''
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np;
 from src import Activation_functions_and_derivatives as AFD;
 from src import UtilityFunctions as UF;
 from src import load_mnist_Prof as LMP;
-import sys, ast
+import sys, ast;
 
 no_of_digits = 10;
 
@@ -45,6 +44,7 @@ def initialize_multilayer_weights(net_dims):
         parameters["b" + str(l + 1)] = np.random.randn(net_dims[l + 1], 1) * np.sqrt(1 / net_dims[l + 1]);
     return parameters;
 
+
 def linear_forward(A, W, b):
     '''
     Input A propagates through the layer
@@ -64,6 +64,7 @@ def linear_forward(A, W, b):
     # Simple forward step for Lth layer ZL with inputs A(L-1), W and b
     Z = np.dot(W, A) + b;
     return Z, cache;
+
 
 def layer_forward(A_prev, W, b, activation):
     '''
@@ -92,6 +93,7 @@ def layer_forward(A_prev, W, b, activation):
     cache["act_cache"] = act_cache;
     return A, cache;
 
+
 def multi_layer_forward(X, parameters):
     '''
     Forward propgation through the layers of the network
@@ -114,6 +116,7 @@ def multi_layer_forward(X, parameters):
     AL, cache = layer_forward(A, parameters["W" + str(L)], parameters["b" + str(L)], "linear")
     caches.append(cache)
     return AL, caches
+
 
 def linear_backward(dZ, cache, W, b):
     '''
@@ -139,6 +142,7 @@ def linear_backward(dZ, cache, W, b):
     dW = np.dot(dZ, cache["A"].T) / A_prev.shape[1];
     db = np.sum(dZ, axis=1, keepdims=True) / A_prev.shape[1];
     return dA_prev, dW, db;
+
 
 def layer_backward(dA, cache, W, b, activation):
     '''
@@ -170,6 +174,7 @@ def layer_backward(dA, cache, W, b, activation):
     dA_prev, dW, db = linear_backward(dZ, lin_cache, W, b)
     return dA_prev, dW, db
 
+
 def multi_layer_backward(dAL, caches, parameters):
     '''
     Back propgation through the layers of the network (except softmax cross entropy)
@@ -196,6 +201,7 @@ def multi_layer_backward(dAL, caches, parameters):
         activation = "relu"
     return gradients
 
+
 def classify(X, parameters, lables, onlyPred=False):
     '''
     Network prediction for inputs X
@@ -219,7 +225,8 @@ def classify(X, parameters, lables, onlyPred=False):
     Ypred, _, loss = AFD.softmax_cross_entropy_loss(AL, lables);
     return Ypred, loss;
 
-def update_parameters(parameters, gradients, epoch, learning_rate, decay_rate=0.01):
+
+def update_parameters(parameters, gradients, epoch, learning_rate, decay_rate=0.01, descent_optimization_type=0):
     '''
     Updates the network parameters with gradient descent
 
@@ -233,7 +240,8 @@ def update_parameters(parameters, gradients, epoch, learning_rate, decay_rate=0.
         decay_rate - rate of decay of step size - not necessary - in case you want to use
     '''
     # epoch = 1;
-    alpha = learning_rate * (1 / (1 + decay_rate * epoch))
+    # alpha = learning_rate * (1 / (1 + decay_rate * epoch));
+    alpha = learning_rate;
     L = len(parameters) // 2
     # Once the required slopes of W and b are found the update
     # we update the value W and b and continue till the required iterations are completed
@@ -242,8 +250,9 @@ def update_parameters(parameters, gradients, epoch, learning_rate, decay_rate=0.
         parameters["b" + str(l)] = parameters["b" + str(l)] - alpha * gradients["db" + str(l)];
     return parameters, alpha
 
+
 def multi_layer_network(X, Y, validation_data, validation_label, net_dims, num_iterations=500, learning_rate=0.2,
-                        decay_rate=0.01):
+                        decay_rate=0.01, batch_size=50, descent_optimization_type=0):
     '''
     Creates the multilayer network and trains the network
 
@@ -266,22 +275,30 @@ def multi_layer_network(X, Y, validation_data, validation_label, net_dims, num_i
         # This consists for starting from Ao i.e X
         # and evalute till AL
         # keep hold of cache to be used later in backpropagation step
-        AL, caches = multi_layer_forward(A0, parameters);
-        AS, cache, loss = AFD.softmax_cross_entropy_loss(AL, Y);
-        dZ = AFD.softmax_cross_entropy_loss_der(Y, cache);
-        # find
         cost = classify(X, parameters, Y)[1];
-        # Backward Prop
-        # call to softmax cross entropy loss der
-        # call to multi_layer_backward to get gradients
-        # call to update the parameters
-        gradients = multi_layer_backward(dZ, caches, parameters);
-        parameters, alpha = update_parameters(parameters, gradients, ii, learning_rate, decay_rate);
+        for i in range(0, len(A0.T), batch_size):
+            if i + batch_size >= len(X.T):
+                batch_data = X.T[i:].T
+                batch_label = Y.T[i:].T
+            else:
+                batch_data = X.T[i:i + batch_size].T
+                batch_label = Y.T[i:i + batch_size].T
+            AL, caches = multi_layer_forward(batch_data, parameters);
+            AS, cache, loss = AFD.softmax_cross_entropy_loss(AL, batch_label);
+            dZ = AFD.softmax_cross_entropy_loss_der(batch_label, cache);
+            # find
+            # Backward Prop
+            # call to softmax cross entropy loss der
+            # call to multi_layer_backward to get gradients
+            # call to update the parameters
+            gradients = multi_layer_backward(dZ, caches, parameters);
+            parameters, alpha = update_parameters(parameters, gradients, ii, learning_rate, decay_rate, );
         if ii % 10 == 0:
             costs.append(cost);
         if ii % 10 == 0:
             print("Cost for training at iteration %i is: %.05f, learning rate: %.05f" % (ii, cost, alpha))
     return costs, "", parameters
+
 
 def main():
     '''
@@ -308,47 +325,58 @@ def main():
     # dummy training data, but next set of data to be used as test data
     validation_data, validation_label, test_data, test_label = \
         LMP.mnist(noTrSamples=1000, noTsSamples=1000, \
-              digit_range=digit_range, \
-              noTrPerClass=100, noTsPerClass=100);
+                  digit_range=digit_range, \
+                  noTrPerClass=100, noTsPerClass=100);
 
     # real training data, but next set of data to be used as validation data
     train_data_act, train_label_act, validation_data_new, validation_label_new = \
         LMP.mnist(noTrSamples=5000, noTsSamples=1000, \
-              digit_range=digit_range, \
-              noTrPerClass=500, noTsPerClass=100);
+                  digit_range=digit_range, \
+                  noTrPerClass=500, noTsPerClass=100);
 
     # initialize learning rate and num_iterations
     learning_rate = 0.1
-    num_iterations = 200
+    num_iterations = 600
 
-    costs, _, parameters = multi_layer_network(train_data_act, train_label_act, validation_data, validation_label,
-                                               net_dims, \
-                                               num_iterations=num_iterations, learning_rate=learning_rate)
+    train_data_act, train_label_act = UF.unison_shuffled_copies(train_data_act.T, train_label_act.T);
 
-    # compute the accuracy for training set, validation set and testing set by predicting them first
-    trPred, train_loss = classify(train_data_act, parameters, train_label_act);
-    # tsPred, test_loss = classify(test_data, parameters, test_label)
-    # vdPred, validation_loss = classify(validation_data, parameters, validation_label);
+    inp = int(input("Enter 1 for comparing Batch Sizes or 2 for Comparing GDO techniques:"));
+    costsList = {};
+    parametersList = {};
 
-    trAcc = UF.accuracy(trPred, train_label_act);
-    # teAcc = accuracy(tsPred, test_label);
-    # valAcc = accuracy(vdPred, validation_label);
+    is_batch_comparision = True;
+    if inp == 1:
+        is_batch_comparision = True;
+        gdo_opt = int(input("Enter the GDO type : "));
+        learning_rate = float(input("Learning rate, you want to check for: "));
+        batch_Sizes = [1, 50, 100, 500, 5000];
 
-    print("Accuracy for training set is {0:0.3f} %".format(trAcc));
-    # print("Accuracy for testing set is {0:0.3f} %".format(teAcc));
-    # print("Accuracy for validation set is {0:0.3f} %".format(valAcc));
+        for x in batch_Sizes:
+            costs, _, parameters = multi_layer_network(train_data_act, train_label_act, validation_data,
+                                                       validation_label,
+                                                       net_dims, \
+                                                       num_iterations=num_iterations, learning_rate=learning_rate,
+                                                       batch_size=x);
+            costsList[x] = costs;
+            parametersList[x] = parameters;
+            UF.getTrainAndValidationAccuracy();
 
-    # PLOT of costs vs iterations
-    # here plot our results where our x axis would be the 1 to no. of iteration with interval of 10
-    # y axis would be costs list for training and validation set
+    if inp == 2:
+        is_batch_comparision = False;
+        batch_Size = int(input("Enter the Batch Size you want to test for : "));
+        learning_rate = float(input("Learning rate, you want to check for: "));
 
-    iterations = [i for i in range(0, num_iterations, 10)];
+        for key in UF.desent_optimzation_map.iterkeys():
+            costs, _, parameters = multi_layer_network(train_data_act, train_label_act, validation_data,
+                                                       validation_label,
+                                                       net_dims, \
+                                                       num_iterations=num_iterations, learning_rate=learning_rate,
+                                                       descent_optimization_type=key, batch_size=batch_Size);
+            costsList[x] = costs;
+            parametersList[x] = parameters;
+            UF.getTrainAndValidationAccuracy();
 
-    plt.plot(iterations, costs, label="Training Cost");
-    # plt.plot(iterations, costs_validation, label="Validation Cost");
-    plt.legend();
-    plt.title("Train and Validation errors for %s dimensions multi layer neurons" % str(net_dims[:len(net_dims) - 1]));
-    plt.show();
+    UF.plotWithCosts(num_iterations, costsList, True, net_dims);
 
 
 if __name__ == "__main__":

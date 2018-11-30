@@ -3,6 +3,7 @@ from src import UtilityFunctions as UF;
 
 no_of_digits = 10;
 
+
 def tanh(Z):
     '''
     computes tanh activation of Z
@@ -19,6 +20,7 @@ def tanh(Z):
     cache["Z"] = Z
     return A, cache
 
+
 def tanh_der(dA, cache):
     '''
     computes derivative of tanh activation
@@ -34,8 +36,9 @@ def tanh_der(dA, cache):
     # We have dA in the input all we need is Z and
     # that we get from that cache which also the part of the input this method
 
-    dZ = dA*(1.0 - np.tanh(cache["Z"])**2)[0];
+    dZ = dA * (1.0 - np.tanh(cache["Z"]) ** 2)[0];
     return dZ;
+
 
 def sigmoid(Z):
     '''
@@ -48,10 +51,11 @@ def sigmoid(Z):
         A is activation. numpy.ndarray (n, m)
         cache is a dictionary with {"Z", Z}
     '''
-    A = 1/(1+np.exp(-Z))
+    A = 1 / (1 + np.exp(-Z))
     cache = {}
     cache["Z"] = Z
     return A, cache
+
 
 def sigmoid_der(dA, cache):
     '''
@@ -68,8 +72,9 @@ def sigmoid_der(dA, cache):
     # We have dA in the input all we need is Z and
     # that we get from that cache which also the part of the input this method
     A = sigmoid(cache["Z"])[0];
-    dZ = dA*(A*(1-A));
+    dZ = dA * (A * (1 - A));
     return dZ;
+
 
 def softmax(X, theta=1.0, axis=None):
     """
@@ -114,6 +119,7 @@ def softmax(X, theta=1.0, axis=None):
 
     return p
 
+
 def relu(Z):
     '''
     computes relu activation of Z
@@ -129,6 +135,7 @@ def relu(Z):
     cache = {}
     cache["Z"] = Z
     return A, cache
+
 
 def relu_der(dA, cache):
     '''
@@ -147,6 +154,7 @@ def relu_der(dA, cache):
     dZ[Z < 0] = 0
     return dZ
 
+
 def linear(Z):
     '''
     computes linear activation of Z
@@ -164,6 +172,7 @@ def linear(Z):
     cache["Z"] = Z;
     return A, cache;
 
+
 def linear_der(dA, cache):
     '''
     computes derivative of linear activation
@@ -179,6 +188,7 @@ def linear_der(dA, cache):
     '''
     dZ = np.array(dA, copy=True);
     return dZ;
+
 
 def softmax_cross_entropy_loss(Z, Y=np.array([])):
     '''
@@ -218,6 +228,7 @@ def softmax_cross_entropy_loss(Z, Y=np.array([])):
     loss = np.sum(log_loss_for_all_samples) / m;
 
     return A, cache, loss;
+
 
 def softmax_cross_entropy_loss_der(Y, cache):
     '''

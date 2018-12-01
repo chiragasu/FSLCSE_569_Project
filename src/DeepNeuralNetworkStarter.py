@@ -263,24 +263,26 @@ def update_parameters(parameters, gradients, epoch, learning_rate, decay_rate=0.
         if descent_optimization_type == 1:
             dw_update, db_update = PU.polyUpdateParams(momentumParams["mtw" + str(l)], momentumParams["mtb" + str(l)], dw_update, db_update);
             momentumParams["mtw" + str(l)] = dw_update;
-            momentumParams["mtw" + str(l)] = db_update;
+            momentumParams["mtb" + str(l)] = db_update;
         elif descent_optimization_type == 2:
             dw_update, db_update = NU.NestrovUpdateParams(momentumParams["mtw" + str(l)], momentumParams["mtb" + str(l)],
                                                        dw_update, db_update);
             momentumParams["mtw" + str(l)] = dw_update;
-            momentumParams["mtw" + str(l)] = db_update;
+            momentumParams["mtb" + str(l)] = db_update;
         elif descent_optimization_type == 3:
+           ###########adam needs both rmsprop parameters and the momentum ones....
             dw_update, db_update = AU.adamUpdateParams(momentumParams["mtw" + str(l)],
                                                           momentumParams["mtb" + str(l)],
                                                           dw_update, db_update);
             momentumParams["mtw" + str(l)] = dw_update;
-            momentumParams["mtw" + str(l)] = db_update;
+            momentumParams["mtb" + str(l)] = db_update;
+           
         elif descent_optimization_type == 4:
             dw_update, db_update = RPU.rmsPropUpdateParams(momentumParams["mtw" + str(l)],
                                                           momentumParams["mtb" + str(l)],
                                                           dw_update, db_update);
             momentumParams["mtw" + str(l)] = dw_update;
-            momentumParams["mtw" + str(l)] = db_update;
+            momentumParams["mtb" + str(l)] = db_update;
         parameters["W" + str(l)] = parameters["W" + str(l)] - alpha * dw_update;
         parameters["b" + str(l)] = parameters["b" + str(l)] - alpha * db_update;
     return parameters, alpha;

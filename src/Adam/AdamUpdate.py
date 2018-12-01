@@ -1,4 +1,4 @@
-
+###need 2 more variables vw and vb
 
 beta = 0.9;
 beta2 = 0.999;
